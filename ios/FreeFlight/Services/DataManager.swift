@@ -15,6 +15,7 @@ final class DataManager {
 
     // Visible data
     var visibleAirspace: [AirspaceFeature] = []
+    var airspaceLabels: [AirspaceLabel] = []
     var visibleAirports: [Airport] = []
     var visibleNavaids: [Navaid] = []
     var visibleObstacles: [Obstacle] = []
@@ -69,9 +70,10 @@ final class DataManager {
 
         // Filter airspace by zoom
         if showAirspace {
-            filterAirspaceForZoom(zoom: zoom)
+            filterAirspaceForZoom(zoom: zoom, region: region)
         } else {
             visibleAirspace = []
+            airspaceLabels = []
         }
 
         // Debounce API calls
@@ -83,7 +85,7 @@ final class DataManager {
         }
     }
 
-    private func filterAirspaceForZoom(zoom: Int) {
+    private func filterAirspaceForZoom(zoom: Int, region: MKCoordinateRegion? = nil) {
         visibleAirspace = allAirspace.filter { feature in
             switch feature.airspaceClass {
             case "B": return true
@@ -91,6 +93,14 @@ final class DataManager {
             case "D": return zoom >= 7
             default: return zoom >= 7
             }
+        }
+
+        if let region {
+            airspaceLabels = AirspaceLabelComputer.computeLabels(
+                features: visibleAirspace,
+                region: region,
+                zoom: zoom
+            )
         }
     }
 

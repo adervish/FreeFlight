@@ -52,6 +52,14 @@ struct ContentView: View {
                 .annotationTitles(.hidden)
             }
 
+            // Airspace labels
+            ForEach(dataManager.airspaceLabels) { label in
+                Annotation("", coordinate: label.coordinate) {
+                    AirspaceBorderLabel(label: label)
+                }
+                .annotationTitles(.hidden)
+            }
+
             // Navaid markers
             ForEach(dataManager.visibleNavaids) { navaid in
                 Annotation(navaid.ident, coordinate: navaid.coordinate) {
