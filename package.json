@@ -1,0 +1,27 @@
+{
+  "name": "freeflight",
+  "version": "1.0.0",
+  "description": "Aviation data explorer — airports, airspace, approach plates, and more",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "wrangler dev",
+    "dev:ui": "tsx scripts/dev-ui.ts",
+    "deploy": "wrangler deploy",
+    "db:init": "wrangler d1 execute freeflight-db --local --file=./schema-faa.sql",
+    "db:init:remote": "wrangler d1 execute freeflight-db --remote --file=./schema-faa.sql",
+    "faa:download": "tsx scripts/download-faa-data.ts",
+    "faa:download:remote": "tsx scripts/download-faa-data.ts --remote"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@types/node": "^25.5.0",
+    "h3-js": "^4.4.0",
+    "hono": "^4.12.8",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3",
+    "wrangler": "^4.73.0"
+  }
+}

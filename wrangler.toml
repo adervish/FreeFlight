@@ -1,0 +1,17 @@
+name = "freeflight"
+main = "src/index.ts"
+compatibility_date = "2024-12-01"
+
+[assets]
+directory = "./public"
+binding = "ASSETS"
+not_found_handling = "single-page-application"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "freeflight-db"
+database_id = "abd66e0d-4b95-47bf-aade-748e95fa93e5"
+
+[[routes]]
+pattern = "freeflight.bentboolean.com"
+custom_domain = true

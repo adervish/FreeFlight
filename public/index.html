@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FreeFlight — Aviation Explorer</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div id="map"></div>
+  <div id="search-box">
+    <input id="search-input" type="text" placeholder="Search airports..." autocomplete="off">
+    <div id="search-results"></div>
+  </div>
+  <div id="map-controls">
+    <button id="vfr-toggle" onclick="toggleVFR()">VFR</button>
+    <button id="airspace-toggle" onclick="toggleAirspace()">Airspace</button>
+    <span class="control-sep"></span>
+    <button id="feat-airports" onclick="toggleFeatureLayer('airports')">Airports</button>
+    <button id="feat-navaids" onclick="toggleFeatureLayer('navaids')">Navaids</button>
+    <button id="feat-obstacles" onclick="toggleFeatureLayer('obstacles')">Obstacles</button>
+    <button id="feat-waypoints" onclick="toggleFeatureLayer('waypoints')">Waypoints</button>
+    <button id="feat-ils" onclick="toggleFeatureLayer('ils')">ILS</button>
+  </div>
+  <div id="plates-overlay" onclick="closePlatesPanel()"></div>
+  <div id="plates-panel">
+    <div id="plates-sidebar">
+      <div id="plates-header">
+        <span id="plates-title"></span>
+        <button id="plates-close" onclick="closePlatesPanel()">&times;</button>
+      </div>
+      <div id="plates-list"></div>
+    </div>
+    <div id="plates-viewer"></div>
+  </div>
+
+  <script src="/js/search.js"></script>
+  <script src="/js/api.js"></script>
+  <script src="/js/map.js"></script>
+  <script src="/js/features.js"></script>
+  <script>
+    function initApp() {
+      initMap();
+      toggleAirspace();
+      initFeatureLayers();
+    }
+
+    fetch("/api/config").then(function(r) { return r.json(); }).then(function(cfg) {
+      var s = document.createElement("script");
+      s.src = "https://maps.googleapis.com/maps/api/js?key=" + cfg.mapsApiKey + "&callback=initApp";
+      s.async = true;
+      s.defer = true;
+      document.body.appendChild(s);
+    });
+  </script>
+</body>
+</html>
