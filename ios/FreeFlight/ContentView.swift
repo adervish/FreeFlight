@@ -2,7 +2,8 @@ import SwiftUI
 import MapKit
 
 struct ContentView: View {
-    @Environment(DataManager.self) var dataManager
+    @Environment(DataManager.self) private var dataManager
+    @Bindable private var bindableDataManager = DataManager.shared
     @State private var selectedAirport: Airport?
     @State private var showSearch = false
     @State private var showLayers = false
@@ -89,11 +90,11 @@ struct ContentView: View {
             // Layer controls
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 4) {
-                    LayerToggle(label: "Airspace", icon: "circle.hexagongrid", isOn: $dataManager.showAirspace)
-                    LayerToggle(label: "Airports", icon: "airplane", isOn: $dataManager.showAirports)
-                    LayerToggle(label: "Navaids", icon: "antenna.radiowaves.left.and.right", isOn: $dataManager.showNavaids)
-                    LayerToggle(label: "Obstacles", icon: "exclamationmark.triangle", isOn: $dataManager.showObstacles)
-                    LayerToggle(label: "Waypoints", icon: "mappin", isOn: $dataManager.showWaypoints)
+                    LayerToggle(label: "Airspace", icon: "circle.hexagongrid", isOn: $bindableDataManager.showAirspace)
+                    LayerToggle(label: "Airports", icon: "airplane", isOn: $bindableDataManager.showAirports)
+                    LayerToggle(label: "Navaids", icon: "antenna.radiowaves.left.and.right", isOn: $bindableDataManager.showNavaids)
+                    LayerToggle(label: "Obstacles", icon: "exclamationmark.triangle", isOn: $bindableDataManager.showObstacles)
+                    LayerToggle(label: "Waypoints", icon: "mappin", isOn: $bindableDataManager.showWaypoints)
 
                     Divider().frame(height: 28)
 

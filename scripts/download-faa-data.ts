@@ -483,6 +483,9 @@ async function loadToD1(geojson: any, opts: D1Opts, sourceName: string) {
       .map((f: any) => {
         const row = opts.mapRow(f.properties || {}, f.geometry);
 
+        // Skip rows where the first column (usually ident) is null/empty
+        if (row[0] == null || row[0] === "") return null;
+
         // Compute tier
         const tier = opts.computeTier
           ? opts.computeTier(f.properties || {})
@@ -496,16 +499,23 @@ async function loadToD1(geojson: any, opts: D1Opts, sourceName: string) {
         const lat = latIdx >= 0 ? row[latIdx] as number : null;
         const lng = lngIdx >= 0 ? row[lngIdx] as number : null;
 
-        if (opts.h3Resolutions && lat != null && lng != null && !isNaN(lat) && !isNaN(lng)) {
-          for (const res of opts.h3Resolutions) {
-            row.push(computeH3(lat, lng, res));
+        if (opts.h3Resolutions) {
+          if (lat != null && lng != null && !isNaN(lat) && !isNaN(lng)) {
+            for (const res of opts.h3Resolutions) {
+              row.push(computeH3(lat, lng, res));
+            }
+          } else {
+            for (const _ of opts.h3Resolutions) {
+              row.push(null);
+            }
           }
         }
 
         return "(" + row.map(escapeSQL).join(",") + ")";
       })
+      .filter(Boolean)
       .join(",\n");
-    lines.push(`INSERT INTO ${opts.table} (${colList}) VALUES ${values};`);
+    if (values) lines.push(`INSERT INTO ${opts.table} (${colList}) VALUES ${values};`);
   }
 
   fs.writeFileSync(tmpFile, lines.join("\n"));
@@ -537,21 +547,29 @@ async function loadToD1(geojson: any, opts: D1Opts, sourceName: string) {
         const values = batch
           .map((f: any) => {
             const row = opts.mapRow(f.properties || {}, f.geometry);
+            if (row[0] == null || row[0] === "") return null;
             const tier = opts.computeTier ? opts.computeTier(f.properties || {}) : 3;
             row.push(tier);
             const latIdx = opts.columns.indexOf("latitude");
             const lngIdx = opts.columns.indexOf("longitude");
             const lat = latIdx >= 0 ? row[latIdx] as number : null;
             const lng = lngIdx >= 0 ? row[lngIdx] as number : null;
-            if (opts.h3Resolutions && lat != null && lng != null && !isNaN(lat) && !isNaN(lng)) {
-              for (const res of opts.h3Resolutions) {
-                row.push(computeH3(lat, lng, res));
+            if (opts.h3Resolutions) {
+              if (lat != null && lng != null && !isNaN(lat) && !isNaN(lng)) {
+                for (const res of opts.h3Resolutions) {
+                  row.push(computeH3(lat, lng, res));
+                }
+              } else {
+                for (const _ of opts.h3Resolutions) {
+                  row.push(null);
+                }
               }
             }
             return "(" + row.map(escapeSQL).join(",") + ")";
           })
+          .filter(Boolean)
           .join(",");
-        stmts.push(`INSERT INTO ${opts.table} (${colList}) VALUES ${values};`);
+        if (values) stmts.push(`INSERT INTO ${opts.table} (${colList}) VALUES ${values};`);
       }
       const chunkFile = `/tmp/faa-retry-chunk-${Date.now()}.sql`;
       fs.writeFileSync(chunkFile, stmts.join("\n"));

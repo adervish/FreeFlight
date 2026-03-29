@@ -7,19 +7,19 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		A1000001 /* FreeFlightApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000001; };
-		A1000002 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000002; };
-		A1000003 /* Airport.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000003; };
-		A1000004 /* Airspace.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000004; };
-		A1000005 /* PlateModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000005; };
-		A1000006 /* APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000006; };
-		A1000007 /* DataManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000007; };
-		A1000008 /* AirportMarkerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000008; };
-		A1000009 /* LayerToggle.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000009; };
-		A1000010 /* SearchBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000010; };
-		A1000011 /* AirportDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000011; };
-		A1000012 /* PlateViewerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000012; };
-		A1000020 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A2000020; };
+		A1000001 /* FreeFlightApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000001 /* FreeFlightApp.swift */; };
+		A1000002 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000002 /* ContentView.swift */; };
+		A1000003 /* Airport.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000003 /* Airport.swift */; };
+		A1000004 /* Airspace.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000004 /* Airspace.swift */; };
+		A1000005 /* PlateModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000005 /* PlateModels.swift */; };
+		A1000006 /* APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000006 /* APIClient.swift */; };
+		A1000007 /* DataManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000007 /* DataManager.swift */; };
+		A1000008 /* AirportMarkerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000008 /* AirportMarkerView.swift */; };
+		A1000009 /* LayerToggle.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000009 /* LayerToggle.swift */; };
+		A1000010 /* SearchBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000010 /* SearchBarView.swift */; };
+		A1000011 /* AirportDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000011 /* AirportDetailView.swift */; };
+		A1000012 /* PlateViewerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000012 /* PlateViewerView.swift */; };
+		A1000020 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A2000020 /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -145,7 +145,7 @@
 /* Begin PBXNativeTarget section */
 		A5000001 /* FreeFlight */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = A7000001;
+			buildConfigurationList = A7000001 /* Build configuration list for PBXNativeTarget "FreeFlight" */;
 			buildPhases = (
 				A6000001 /* Sources */,
 				A6000002 /* Resources */,
@@ -156,7 +156,7 @@
 			);
 			name = FreeFlight;
 			productName = FreeFlight;
-			productReference = A3000001;
+			productReference = A3000001 /* FreeFlight.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -169,7 +169,7 @@
 				LastSwiftUpdateCheck = 1600;
 				LastUpgradeCheck = 1600;
 			};
-			buildConfigurationList = A7000003;
+			buildConfigurationList = A7000003 /* Build configuration list for PBXProject "FreeFlight" */;
 			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -178,7 +178,7 @@
 				Base,
 			);
 			mainGroup = A4000001;
-			productRefGroup = A4000010;
+			productRefGroup = A4000010 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
@@ -227,13 +227,14 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = M74Y8C7TSG;
+				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = FreeFlight;
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Show your location on the map";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Show your location on the map";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				MARKETING_VERSION = 1.0;
@@ -250,13 +251,14 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = M74Y8C7TSG;
+				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = FreeFlight;
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Show your location on the map";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Show your location on the map";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				MARKETING_VERSION = 1.0;
@@ -322,7 +324,6 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
-
 	};
 	rootObject = A8000001 /* Project object */;
 }
