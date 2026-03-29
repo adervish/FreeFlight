@@ -12,12 +12,14 @@ const PAGE_SIZE = 1000;
 const DELAY_MS = 300;
 const PUBLIC_DATA = path.resolve(__dirname, "../public/data");
 const ARCHIVE_DIR = path.resolve(PUBLIC_DATA, "archive");
+const CACHE_DIR = path.resolve(__dirname, "../.cache/faa");
 const TODAY = new Date().toISOString().slice(0, 10);
 
 const isRemote = process.argv.includes("--remote");
 const onlySource = process.argv.find((_, i, a) => a[i - 1] === "--only") || null;
 const skipFlatfile = process.argv.includes("--skip-flatfile");
 const skipD1 = process.argv.includes("--skip-d1");
+const noCache = process.argv.includes("--no-cache");
 
 interface FlatfileOpts {
   outputName: string;
@@ -407,14 +409,18 @@ async function runD1File(sqlFile: string) {
   if (fileSize > 5 * 1024 * 1024) {
     console.log(`  Large SQL file (${(fileSize / 1024 / 1024).toFixed(1)}MB), splitting into chunks...`);
     const content = fs.readFileSync(sqlFile, "utf-8");
-    const statements = content.split(";\n").filter((s) => s.trim());
+    const statements = content.split(/;\s*\n/).filter((s) => s.trim().length > 0);
     const CHUNK_STMTS = isRemote ? 100 : 500;
     let chunkNum = 0;
 
     for (let i = 0; i < statements.length; i += CHUNK_STMTS) {
-      const chunk = statements.slice(i, i + CHUNK_STMTS).join(";\n") + ";";
+      const chunkStmts = statements.slice(i, i + CHUNK_STMTS).filter((s) => s.trim().length > 0);
+      if (chunkStmts.length === 0) { chunkNum++; continue; }
+      const chunk = chunkStmts.join(";\n") + ";";
       const chunkFile = sqlFile.replace(".sql", `-chunk${chunkNum}.sql`);
       fs.writeFileSync(chunkFile, chunk);
+      // Verify chunk has actual SQL content
+      if (!chunk.match(/\b(INSERT|DELETE|UPDATE|CREATE|DROP|ALTER)\b/i)) { chunkNum++; try { fs.unlinkSync(chunkFile); } catch {} continue; }
       try {
         try {
           execSync(`npx wrangler d1 execute freeflight-db ${flag} --file=${chunkFile}`, {
@@ -423,9 +429,13 @@ async function runD1File(sqlFile: string) {
             maxBuffer: 50 * 1024 * 1024,
           });
         } catch (ce: any) {
-          const stdout = ce.stdout?.toString() || "";
-          if (!stdout.includes("Executed") && !stdout.includes("rows_written")) {
-            throw ce;
+          const stderr = ce.stderr?.toString() || "";
+          if (stderr.includes("did not contain a statement")) { /* skip empty chunk */ }
+          else {
+            const stdout = ce.stdout?.toString() || "";
+            if (!stdout.includes("Executed") && !stdout.includes("rows_written")) {
+              throw ce;
+            }
           }
         }
       } finally {
@@ -483,21 +493,19 @@ async function loadToD1(geojson: any, opts: D1Opts, sourceName: string) {
       .map((f: any) => {
         const row = opts.mapRow(f.properties || {}, f.geometry);
 
-        // Skip rows where the first column (usually ident) is null/empty
+        // Skip rows missing required fields (ident, lat, lng)
+        const latIdx = opts.columns.indexOf("latitude");
+        const lngIdx = opts.columns.indexOf("longitude");
+        const lat = latIdx >= 0 ? row[latIdx] as number : null;
+        const lng = lngIdx >= 0 ? row[lngIdx] as number : null;
         if (row[0] == null || row[0] === "") return null;
+        if (lat == null || lng == null || isNaN(lat) || isNaN(lng)) return null;
 
         // Compute tier
         const tier = opts.computeTier
           ? opts.computeTier(f.properties || {})
           : 3;
         row.push(tier);
-
-        // Compute H3 cells from lat/lng (find them in the row)
-        // lat is at the index of "latitude" in columns, lng at "longitude"
-        const latIdx = opts.columns.indexOf("latitude");
-        const lngIdx = opts.columns.indexOf("longitude");
-        const lat = latIdx >= 0 ? row[latIdx] as number : null;
-        const lng = lngIdx >= 0 ? row[lngIdx] as number : null;
 
         if (opts.h3Resolutions) {
           if (lat != null && lng != null && !isNaN(lat) && !isNaN(lng)) {
@@ -547,22 +555,17 @@ async function loadToD1(geojson: any, opts: D1Opts, sourceName: string) {
         const values = batch
           .map((f: any) => {
             const row = opts.mapRow(f.properties || {}, f.geometry);
-            if (row[0] == null || row[0] === "") return null;
-            const tier = opts.computeTier ? opts.computeTier(f.properties || {}) : 3;
-            row.push(tier);
             const latIdx = opts.columns.indexOf("latitude");
             const lngIdx = opts.columns.indexOf("longitude");
             const lat = latIdx >= 0 ? row[latIdx] as number : null;
             const lng = lngIdx >= 0 ? row[lngIdx] as number : null;
+            if (row[0] == null || row[0] === "") return null;
+            if (lat == null || lng == null || isNaN(lat) || isNaN(lng)) return null;
+            const tier = opts.computeTier ? opts.computeTier(f.properties || {}) : 3;
+            row.push(tier);
             if (opts.h3Resolutions) {
-              if (lat != null && lng != null && !isNaN(lat) && !isNaN(lng)) {
-                for (const res of opts.h3Resolutions) {
-                  row.push(computeH3(lat, lng, res));
-                }
-              } else {
-                for (const _ of opts.h3Resolutions) {
-                  row.push(null);
-                }
+              for (const res of opts.h3Resolutions) {
+                row.push(computeH3(lat, lng, res));
               }
             }
             return "(" + row.map(escapeSQL).join(",") + ")";
@@ -597,6 +600,7 @@ async function main() {
 
   // Ensure directories exist
   fs.mkdirSync(ARCHIVE_DIR, { recursive: true });
+  fs.mkdirSync(CACHE_DIR, { recursive: true });
 
   // Ensure FAA tables exist
   const schemaFile = path.resolve(__dirname, "../schema-faa.sql");
@@ -626,16 +630,24 @@ async function main() {
     console.log(`━━━ ${source.name} ━━━`);
 
     let geojson: any;
-    try {
-      geojson = await fetchAllFeatures(source.service, {
-        where: source.where,
-        outFields: source.outFields,
-        layer: source.layer,
-      });
-    } catch (e: any) {
-      console.error(`  Download failed: ${e.message}`);
-      summary.push({ name: source.name, features: 0, output: "-", status: "FAILED" });
-      continue;
+    const cacheFile = path.join(CACHE_DIR, `${source.name}-${TODAY}.geojson`);
+    if (!noCache && fs.existsSync(cacheFile)) {
+      console.log(`  Using cached data from ${cacheFile}`);
+      geojson = JSON.parse(fs.readFileSync(cacheFile, "utf-8"));
+    } else {
+      try {
+        geojson = await fetchAllFeatures(source.service, {
+          where: source.where,
+          outFields: source.outFields,
+          layer: source.layer,
+        });
+        fs.writeFileSync(cacheFile, JSON.stringify(geojson));
+        console.log(`  Cached to ${cacheFile}`);
+      } catch (e: any) {
+        console.error(`  Download failed: ${e.message}`);
+        summary.push({ name: source.name, features: 0, output: "-", status: "FAILED" });
+        continue;
+      }
     }
 
     const featureCount = geojson.features.length;

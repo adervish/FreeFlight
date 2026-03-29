@@ -63,17 +63,14 @@ actor APIClient {
         URL(string: "\(baseURL)/api/plates/\(ident)/\(pdf)")!
     }
 
-    // MARK: - Airspace GeoJSON
+    // MARK: - Raw Data (for GeoJSON files parsed manually)
 
-    func fetchAirspaceGeoJSON(filename: String) async throws -> GeoJSONFeatureCollection {
-        let url = URL(string: "\(baseURL)/data/\(filename)")!
-
-        // Try cache first for large static files
+    func fetchRawData(path: String) async throws -> Data {
+        let url = URL(string: "\(baseURL)\(path)")!
         var request = URLRequest(url: url)
         request.cachePolicy = .returnCacheDataElseLoad
-
         let (data, _) = try await session.data(for: request)
-        return try decoder.decode(GeoJSONFeatureCollection.self, from: data)
+        return data
     }
 
     // MARK: - Generic Fetch

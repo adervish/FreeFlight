@@ -42,8 +42,10 @@ final class DataManager {
             for file in files {
                 group.addTask {
                     do {
-                        let geojson = try await self.api.fetchAirspaceGeoJSON(filename: file)
-                        return geojson.features.flatMap { $0.toAirspaceFeatures() }
+                        let data = try await self.api.fetchRawData(path: "/data/\(file)")
+                        let features = AirspaceParser.parse(data: data)
+                        print("Loaded \(file): \(features.count) airspace features")
+                        return features
                     } catch {
                         print("Failed to load \(file): \(error)")
                         return []
@@ -56,6 +58,7 @@ final class DataManager {
             }
         }
 
+        print("Total airspace features: \(allAirspace.count)")
         filterAirspaceForZoom(zoom: 5)
     }
 

@@ -59,101 +59,88 @@ struct AirspaceFeature: Identifiable {
     }
 }
 
-// GeoJSON parsing
-struct GeoJSONFeatureCollection: Codable {
-    let type: String
-    let features: [GeoJSONFeature]
-}
+// MARK: - GeoJSON Parsing (manual for reliability)
 
-struct GeoJSONFeature: Codable {
-    let type: String
-    let properties: GeoJSONProperties
-    let geometry: GeoJSONGeometry
-}
-
-struct GeoJSONProperties: Codable {
-    let n: String?  // name
-    let c: String?  // class
-    let u: String?  // upper altitude
-    let l: String?  // lower altitude
-    let t: String?  // type
-}
-
-struct GeoJSONGeometry: Codable {
-    let type: String
-    let coordinates: AnyCodable // Handles nested arrays
-}
-
-// Helper for decoding nested coordinate arrays
-struct AnyCodable: Codable {
-    let value: Any
-
-    init(_ value: Any) { self.value = value }
-    init(from decoder: Decoder) throws {
-        let container = try decoder.singleValueContainer()
-        if let arr = try? container.decode([AnyCodable].self) {
-            value = arr.map { $0.value }
-        } else if let num = try? container.decode(Double.self) {
-            value = num
-        } else {
-            value = NSNull()
+enum AirspaceParser {
+    static func parse(data: Data) -> [AirspaceFeature] {
+        guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let features = json["features"] as? [[String: Any]] else {
+            return []
         }
-    }
-    func encode(to encoder: Encoder) throws {
-        var container = encoder.singleValueContainer()
-        try container.encodeNil()
-    }
-}
 
-extension GeoJSONFeature {
-    func toAirspaceFeatures() -> [AirspaceFeature] {
-        let cls = properties.c ?? ""
-        // Skip Class E and A
-        if cls == "E" || cls == "A" { return [] }
+        var result: [AirspaceFeature] = []
 
-        let name = properties.n ?? properties.t ?? ""
-        let upper = properties.u ?? ""
-        let lower = properties.l ?? ""
-
-        let rings = extractRings(from: geometry)
-        return rings.map { coords in
-            AirspaceFeature(
-                name: name,
-                airspaceClass: cls,
-                upperAlt: upper,
-                lowerAlt: lower,
-                coordinates: coords
-            )
-        }
-    }
-
-    private func extractRings(from geom: GeoJSONGeometry) -> [[CLLocationCoordinate2D]] {
-        switch geom.type {
-        case "Polygon":
-            if let rings = geom.coordinates.value as? [Any],
-               let outerRing = rings.first as? [Any] {
-                return [parseRing(outerRing)]
+        for feature in features {
+            guard let properties = feature["properties"] as? [String: Any],
+                  let geometry = feature["geometry"] as? [String: Any],
+                  let geomType = geometry["type"] as? String,
+                  let coordinates = geometry["coordinates"] else {
+                continue
             }
-        case "MultiPolygon":
-            if let polys = geom.coordinates.value as? [Any] {
-                return polys.compactMap { poly -> [CLLocationCoordinate2D]? in
-                    guard let rings = poly as? [Any],
-                          let outerRing = rings.first as? [Any] else { return nil }
-                    return parseRing(outerRing)
+
+            let cls = properties["c"] as? String ?? ""
+            // Skip Class E and A
+            if cls == "E" || cls == "A" { continue }
+
+            let name = properties["n"] as? String ?? properties["t"] as? String ?? ""
+            let upper = stringFromAny(properties["u"])
+            let lower = stringFromAny(properties["l"])
+
+            let rings = extractRings(type: geomType, coordinates: coordinates)
+            for ring in rings {
+                if ring.count >= 3 {
+                    result.append(AirspaceFeature(
+                        name: name,
+                        airspaceClass: cls,
+                        upperAlt: upper,
+                        lowerAlt: lower,
+                        coordinates: ring
+                    ))
                 }
             }
-        default: break
         }
-        return []
+
+        return result
     }
 
-    private func parseRing(_ ring: [Any]) -> [CLLocationCoordinate2D] {
-        ring.compactMap { point -> CLLocationCoordinate2D? in
-            guard let coord = point as? [Any],
-                  coord.count >= 2,
-                  let lng = coord[0] as? Double,
-                  let lat = coord[1] as? Double else { return nil }
-            return CLLocationCoordinate2D(latitude: lat, longitude: lng)
+    private static func stringFromAny(_ value: Any?) -> String {
+        guard let value else { return "" }
+        if let s = value as? String { return s }
+        if let n = value as? Int { return String(n) }
+        if let n = value as? Double { return String(Int(n)) }
+        return ""
+    }
+
+    private static func extractRings(type: String, coordinates: Any) -> [[CLLocationCoordinate2D]] {
+        switch type {
+        case "Polygon":
+            guard let rings = coordinates as? [Any],
+                  let outerRing = rings.first else { return [] }
+            return [parseRing(outerRing)]
+
+        case "MultiPolygon":
+            guard let polys = coordinates as? [Any] else { return [] }
+            return polys.compactMap { poly -> [CLLocationCoordinate2D]? in
+                guard let rings = poly as? [Any],
+                      let outerRing = rings.first else { return nil }
+                let ring = parseRing(outerRing)
+                return ring.count >= 3 ? ring : nil
+            }
+
+        default:
+            return []
+        }
+    }
+
+    private static func parseRing(_ ring: Any) -> [CLLocationCoordinate2D] {
+        guard let points = ring as? [Any] else { return [] }
+        return points.compactMap { point -> CLLocationCoordinate2D? in
+            guard let coord = point as? [NSNumber],
+                  coord.count >= 2 else { return nil }
+            return CLLocationCoordinate2D(
+                latitude: coord[1].doubleValue,
+                longitude: coord[0].doubleValue
+            )
         }
     }
 }
