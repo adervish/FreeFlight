@@ -30,6 +30,7 @@ final class DataManager {
     private var lastRegion: MKCoordinateRegion?
 
     private let api = APIClient.shared
+    private let fileCache = FileCache.shared
 
     // MARK: - Airspace Loading
 
@@ -39,18 +40,19 @@ final class DataManager {
 
         let files = ["airspace.json", "boundary-airspace.json", "defense-airspace.json"]
 
+        let baseURL = await api.baseURL
+
         await withTaskGroup(of: [AirspaceFeature].self) { group in
             for file in files {
                 group.addTask {
-                    do {
-                        let data = try await self.api.fetchRawData(path: "/data/\(file)")
-                        let features = AirspaceParser.parse(data: data)
-                        print("Loaded \(file): \(features.count) airspace features")
-                        return features
-                    } catch {
-                        print("Failed to load \(file): \(error)")
+                    let url = "\(baseURL)/data/\(file)"
+                    guard let data = await self.fileCache.getData(for: url) else {
+                        print("Failed to load \(file)")
                         return []
                     }
+                    let features = AirspaceParser.parse(data: data)
+                    print("Loaded \(file): \(features.count) airspace features")
+                    return features
                 }
             }
 
