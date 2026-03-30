@@ -95,13 +95,32 @@ final class DataManager {
     }
 
     private func filterAirspaceForZoom(zoom: Int, region: MKCoordinateRegion? = nil) {
+        // Filter by class + zoom (same thresholds as web)
+        // Also filter by viewport to avoid rendering offscreen polygons
         visibleAirspace = allAirspace.filter { feature in
+            let classVisible: Bool
             switch feature.airspaceClass {
-            case "B": return true
-            case "C": return zoom >= 6
-            case "D": return zoom >= 7
-            default: return zoom >= 7
+            case "B": classVisible = zoom >= 5
+            case "C": classVisible = zoom >= 6
+            case "D": classVisible = zoom >= 7
+            default: classVisible = zoom >= 7
             }
+            guard classVisible else { return false }
+
+            // Viewport check using centroid (rough but fast)
+            if let region {
+                let latMin = region.center.latitude - region.span.latitudeDelta / 2 - 1
+                let latMax = region.center.latitude + region.span.latitudeDelta / 2 + 1
+                let lngMin = region.center.longitude - region.span.longitudeDelta / 2 - 1
+                let lngMax = region.center.longitude + region.span.longitudeDelta / 2 + 1
+                // Check if any coordinate is in the viewport
+                let hasVisible = feature.coordinates.contains { c in
+                    c.latitude >= latMin && c.latitude <= latMax &&
+                    c.longitude >= lngMin && c.longitude <= lngMax
+                }
+                if !hasVisible { return false }
+            }
+            return true
         }
 
         if let region {

@@ -76,10 +76,12 @@ struct ContentView: View {
         }
         .onMapCameraChange(frequency: .onEnd) { context in
             visibleRegion = context.region
+            let zoom = zoomLevel(from: context.region)
+            print("Map zoom: \(zoom) (span: \(String(format: "%.2f", context.region.span.latitudeDelta))° lat, \(String(format: "%.2f", context.region.span.longitudeDelta))° lng)")
             Task {
                 await dataManager.updateVisibleFeatures(
                     region: context.region,
-                    zoom: zoomLevel(from: context.region)
+                    zoom: zoom
                 )
             }
         }
@@ -113,9 +115,22 @@ struct ContentView: View {
         }
     }
 
+    /// Convert MapKit region span to equivalent Google Maps zoom level.
+    /// Google Maps: zoom N shows 360/2^N degrees of longitude.
+    /// MapKit span is the full visible width in degrees.
     private func zoomLevel(from region: MKCoordinateRegion) -> Int {
-        let zoom = Int(log2(360.0 / max(region.span.longitudeDelta, 0.001)))
-        return min(max(zoom, 1), 20)
+        // Use the smaller of lat/lng span to account for aspect ratio
+        let span = min(region.span.latitudeDelta, region.span.longitudeDelta)
+        // zoom = log2(360 / span) but MapKit span ≈ full viewport width
+        // Fine-tuned to match web behavior:
+        //   span ~40° = zoom 3-4 (continental)
+        //   span ~10° = zoom 5-6 (regional)
+        //   span ~2°  = zoom 7-8 (state)
+        //   span ~0.5° = zoom 9-10 (metro)
+        //   span ~0.1° = zoom 11-12 (city)
+        //   span ~0.02° = zoom 13-14 (neighborhood)
+        let zoom = log2(360.0 / max(span, 0.0001))
+        return min(max(Int(zoom), 1), 20)
     }
 }
 
