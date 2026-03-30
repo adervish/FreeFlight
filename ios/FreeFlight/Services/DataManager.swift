@@ -31,10 +31,17 @@ final class DataManager {
 
     private let api = APIClient.shared
     private let fileCache = FileCache.shared
+    private let airportStore = LocalAirportStore.shared
 
     // MARK: - Airspace Loading
 
-    func loadAirspaceData() async {
+    func loadInitialData() async {
+        async let airspace: () = loadAirspaceData()
+        async let airports: () = airportStore.loadAll()
+        _ = await (airspace, airports)
+    }
+
+    private func loadAirspaceData() async {
         guard !airspaceLoaded else { return }
         airspaceLoaded = true
 
@@ -107,14 +114,20 @@ final class DataManager {
     }
 
     private func fetchFeatureLayers(region: MKCoordinateRegion, zoom: Int) async {
+        // Airports: local filtering (no API call)
+        if showAirports {
+            visibleAirports = await airportStore.airportsIn(region: region, zoom: zoom)
+        } else {
+            visibleAirports = []
+        }
+
+        // Other layers: still use API
         var layers: [String] = []
-        if showAirports { layers.append("airports") }
         if showNavaids { layers.append("navaids") }
         if showObstacles { layers.append("obstacles") }
         if showWaypoints { layers.append("waypoints") }
 
-        guard !layers.isEmpty else {
-            visibleAirports = []
+        if layers.isEmpty {
             visibleNavaids = []
             visibleObstacles = []
             visibleWaypoints = []
@@ -130,7 +143,6 @@ final class DataManager {
 
         do {
             let response = try await api.fetchFeatures(layers: layers, zoom: zoom, bounds: bounds)
-            if showAirports { visibleAirports = response.airports ?? [] }
             if showNavaids { visibleNavaids = response.navaids ?? [] }
             if showObstacles { visibleObstacles = response.obstacles ?? [] }
             if showWaypoints { visibleWaypoints = response.waypoints ?? [] }

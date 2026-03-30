@@ -28,7 +28,7 @@ struct ContentView: View {
                 .presentationBackgroundInteraction(.enabled(upThrough: .medium))
         }
         .task {
-            await dataManager.loadAirspaceData()
+            await dataManager.loadInitialData()
         }
     }
 

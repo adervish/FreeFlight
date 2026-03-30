@@ -75,6 +75,16 @@ actor FileCache {
         return (hash != existingHash) ? data : (try Data(contentsOf: localFile))
     }
 
+    /// Manually store data for a URL key (used when data is assembled client-side)
+    func store(data: Data, for urlString: String) {
+        let key = cacheKey(for: urlString)
+        let localFile = cacheDir.appendingPathComponent(key)
+        try? data.write(to: localFile)
+        metadata[key] = CachedFileMeta(hash: sha256(data), lastChecked: Date(), size: data.count)
+        saveMetadata()
+        print("FileCache: stored \(urlString) (\(data.count / 1024)KB)")
+    }
+
     // MARK: - Helpers
 
     private func cacheKey(for url: String) -> String {

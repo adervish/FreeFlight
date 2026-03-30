@@ -98,6 +98,16 @@ app.get("/", async (c) => {
   return c.json(results);
 });
 
+// GET /api/features/all-airports — bulk download for local caching
+app.get("/all-airports", async (c) => {
+  const result = await c.env.DB.prepare(
+    `SELECT ident, name, icao_id, latitude, longitude, elevation, type_code,
+            city, state, country, mil_code, iap_exists, private_use, tier
+     FROM faa_airports ORDER BY tier ASC, ident ASC`
+  ).all();
+  return c.json(result.results);
+});
+
 // GET /api/features/config — returns layer config for frontend
 app.get("/config", (c) => {
   const config: Record<string, { label: string; style: string; minH3Res: number }> = {};
