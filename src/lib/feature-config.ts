@@ -48,7 +48,7 @@ export const LAYER_CONFIG: Record<string, LayerConfig> = {
     table: "faa_designated_points",
     label: "Waypoints",
     minH3Res: 3,
-    tierAtRes: { 3: 1, 4: 2, 5: 3 },
+    tierAtRes: { 3: 3, 4: 3, 5: 3 },
     selectColumns: "ident, latitude, longitude, type_code, tier",
     geojsonType: "label",
     style: "waypoint",
@@ -78,6 +78,6 @@ export function zoomToH3Res(zoom: number): number | null {
   if (zoom >= 13) return null; // show everything, use bbox
   if (zoom >= 12) return 5;
   if (zoom >= 9) return 4;
-  if (zoom >= 5) return 3;
+  if (zoom >= 3) return 3;
   return 3;
 }

@@ -19,6 +19,7 @@ struct ContentView: View {
     @State private var visibleRegion: MKCoordinateRegion?
     @State private var mapStyle: MapStyleOption = .dark
     @State private var locationManager = LocationManager.shared
+    @State private var currentZoom: Int = 5
 
     var body: some View {
         ZStack {
@@ -26,6 +27,19 @@ struct ContentView: View {
             VStack {
                 overlayControls
                 Spacer()
+                HStack {
+                    Text("Z\(currentZoom)")
+                        .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(.ultraThinMaterial)
+                        .clipShape(Capsule())
+                    Spacer()
+                }
+                .padding(.horizontal, 12)
+                .padding(.bottom, locationManager.isTracking ? 0 : 34)
+
                 if locationManager.isTracking {
                     GPSInstrumentStrip(locationManager: locationManager)
                         .padding(.horizontal, 8)
@@ -140,7 +154,7 @@ struct ContentView: View {
         .onMapCameraChange(frequency: .onEnd) { context in
             visibleRegion = context.region
             let zoom = zoomLevel(from: context.region)
-            print("Map zoom: \(zoom) (span: \(String(format: "%.2f", context.region.span.latitudeDelta))° lat, \(String(format: "%.2f", context.region.span.longitudeDelta))° lng)")
+            currentZoom = zoom
             dataManager.updateVisibleFeatures(
                 region: context.region,
                 zoom: zoom
