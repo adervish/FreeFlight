@@ -5,6 +5,9 @@ struct ContentView: View {
     @Environment(DataManager.self) private var dataManager
     @Bindable private var bindableDataManager = DataManager.shared
     @State private var selectedAirport: Airport?
+    @State private var selectedNavaid: Navaid?
+    @State private var selectedObstacle: Obstacle?
+    @State private var selectedWaypoint: Waypoint?
     @State private var showSearch = false
     @State private var showLayers = false
     @State private var mapPosition = MapCameraPosition.region(
@@ -38,8 +41,26 @@ struct ContentView: View {
                 .presentationDragIndicator(.visible)
                 .presentationBackgroundInteraction(.enabled(upThrough: .medium))
         }
-        .task {
-            await dataManager.loadInitialData()
+        .sheet(item: $selectedNavaid) { navaid in
+            NavaidDetailView(navaid: navaid)
+                .presentationDetents([.medium])
+                .presentationDragIndicator(.visible)
+                .presentationBackgroundInteraction(.enabled(upThrough: .medium))
+        }
+        .sheet(item: $selectedObstacle) { obstacle in
+            ObstacleDetailView(obstacle: obstacle)
+                .presentationDetents([.medium])
+                .presentationDragIndicator(.visible)
+                .presentationBackgroundInteraction(.enabled(upThrough: .medium))
+        }
+        .sheet(item: $selectedWaypoint) { waypoint in
+            WaypointDetailView(waypoint: waypoint)
+                .presentationDetents([.medium])
+                .presentationDragIndicator(.visible)
+                .presentationBackgroundInteraction(.enabled(upThrough: .medium))
+        }
+        .onAppear {
+            dataManager.loadInitialData()
         }
     }
 
@@ -82,6 +103,25 @@ struct ContentView: View {
             ForEach(dataManager.visibleNavaids) { navaid in
                 Annotation(navaid.ident, coordinate: navaid.coordinate) {
                     NavaidMarkerView(navaid: navaid)
+                        .onTapGesture { selectedNavaid = navaid }
+                }
+                .annotationTitles(.hidden)
+            }
+
+            // Obstacle markers
+            ForEach(dataManager.visibleObstacles) { obstacle in
+                Annotation("", coordinate: obstacle.coordinate) {
+                    ObstacleMarkerView(obstacle: obstacle)
+                        .onTapGesture { selectedObstacle = obstacle }
+                }
+                .annotationTitles(.hidden)
+            }
+
+            // Waypoint markers
+            ForEach(dataManager.visibleWaypoints) { waypoint in
+                Annotation(waypoint.ident, coordinate: waypoint.coordinate) {
+                    WaypointMarkerView(waypoint: waypoint)
+                        .onTapGesture { selectedWaypoint = waypoint }
                 }
                 .annotationTitles(.hidden)
             }
@@ -101,12 +141,10 @@ struct ContentView: View {
             visibleRegion = context.region
             let zoom = zoomLevel(from: context.region)
             print("Map zoom: \(zoom) (span: \(String(format: "%.2f", context.region.span.latitudeDelta))° lat, \(String(format: "%.2f", context.region.span.longitudeDelta))° lng)")
-            Task {
-                await dataManager.updateVisibleFeatures(
-                    region: context.region,
-                    zoom: zoom
-                )
-            }
+            dataManager.updateVisibleFeatures(
+                region: context.region,
+                zoom: zoom
+            )
         }
         .ignoresSafeArea()
     }

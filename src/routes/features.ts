@@ -108,6 +108,15 @@ app.get("/all-airports", async (c) => {
   return c.json(result.results);
 });
 
+// GET /api/features/all-navaids — bulk download for local caching
+app.get("/all-navaids", async (c) => {
+  const result = await c.env.DB.prepare(
+    `SELECT ident, name, class, latitude, longitude, tier
+     FROM faa_navaids ORDER BY tier ASC, ident ASC`
+  ).all();
+  return c.json(result.results);
+});
+
 // GET /api/features/config — returns layer config for frontend
 app.get("/config", (c) => {
   const config: Record<string, { label: string; style: string; minH3Res: number }> = {};

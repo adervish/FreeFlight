@@ -38,8 +38,8 @@ export const LAYER_CONFIG: Record<string, LayerConfig> = {
   navaids: {
     table: "faa_navaids",
     label: "Navaids",
-    minH3Res: 4,
-    tierAtRes: { 4: 1, 5: 2 },
+    minH3Res: 3,
+    tierAtRes: { 3: 1, 4: 2, 5: 2 },
     selectColumns: "ident, name, class, latitude, longitude, tier",
     geojsonType: "point",
     style: "navaid",
@@ -47,8 +47,8 @@ export const LAYER_CONFIG: Record<string, LayerConfig> = {
   waypoints: {
     table: "faa_designated_points",
     label: "Waypoints",
-    minH3Res: 5,
-    tierAtRes: { 5: 3 },
+    minH3Res: 3,
+    tierAtRes: { 3: 1, 4: 2, 5: 3 },
     selectColumns: "ident, latitude, longitude, type_code, tier",
     geojsonType: "label",
     style: "waypoint",

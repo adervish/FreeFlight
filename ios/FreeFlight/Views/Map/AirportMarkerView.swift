@@ -74,3 +74,35 @@ struct NavaidMarkerView: View {
         }
     }
 }
+
+struct ObstacleMarkerView: View {
+    let obstacle: Obstacle
+
+    var body: some View {
+        VStack(spacing: 1) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .font(.system(size: 8))
+                .foregroundStyle(.orange)
+            if let agl = obstacle.agl {
+                Text("\(Int(agl))'")
+                    .font(.system(size: 7, weight: .medium))
+                    .foregroundStyle(.orange.opacity(0.8))
+            }
+        }
+    }
+}
+
+struct WaypointMarkerView: View {
+    let waypoint: Waypoint
+
+    var body: some View {
+        VStack(spacing: 1) {
+            Image(systemName: "triangle.fill")
+                .font(.system(size: 6))
+                .foregroundStyle(.green)
+            Text(waypoint.ident)
+                .font(.system(size: 7, weight: .medium))
+                .foregroundStyle(.green.opacity(0.8))
+        }
+    }
+}
