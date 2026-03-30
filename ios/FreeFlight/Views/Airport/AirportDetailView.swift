@@ -2,11 +2,15 @@ import SwiftUI
 
 struct AirportDetailView: View {
     let airport: Airport
+    @Environment(DataManager.self) private var dataManager
+    @Environment(\.dismiss) private var dismiss
     @State private var selectedTab = 0
     @State private var info: AirportInfo?
     @State private var plates: [PlateGroup] = []
     @State private var selectedPlate: Plate?
+    @State private var georefs: [PlateGeoref] = []
     @State private var isLoading = true
+    @State private var isLoadingOverlay = false
 
     private let api = APIClient.shared
 
@@ -172,16 +176,29 @@ struct AirportDetailView: View {
                     ForEach(plates) { group in
                         Section(group.label) {
                             ForEach(group.plates) { plate in
-                                Button {
-                                    selectedPlate = plate
-                                } label: {
-                                    HStack {
-                                        Text(plate.name)
-                                            .foregroundStyle(.primary)
-                                        Spacer()
-                                        Image(systemName: "doc.fill")
-                                            .foregroundStyle(.blue)
-                                            .font(.caption)
+                                HStack {
+                                    Button {
+                                        selectedPlate = plate
+                                    } label: {
+                                        HStack {
+                                            Text(plate.name)
+                                                .foregroundStyle(.primary)
+                                            Spacer()
+                                            Image(systemName: "doc.fill")
+                                                .foregroundStyle(.blue)
+                                                .font(.caption)
+                                        }
+                                    }
+                                    if plate.isGeoreferenced {
+                                        Button {
+                                            Task { await showPlateOnMap(plate) }
+                                        } label: {
+                                            Image(systemName: isLoadingOverlay ? "hourglass" : "map.fill")
+                                                .foregroundStyle(.green)
+                                                .font(.caption)
+                                        }
+                                        .buttonStyle(.plain)
+                                        .disabled(isLoadingOverlay)
                                     }
                                 }
                             }
@@ -212,17 +229,29 @@ struct AirportDetailView: View {
     private func loadData() async {
         async let infoResult = api.fetchAirportInfo(ident: airport.ident)
         async let platesResult = api.fetchPlates(ident: airport.ident)
+        async let georefResult = api.fetchPlateGeoref(ident: airport.ident)
 
-        do {
-            info = try await infoResult
-        } catch {
-            print("Info load error: \(error)")
-        }
-        do {
-            plates = try await platesResult
-        } catch {
-            print("Plates load error: \(error)")
-        }
+        do { info = try await infoResult } catch { print("Info load error: \(error)") }
+        do { plates = try await platesResult } catch { print("Plates load error: \(error)") }
+        do { georefs = try await georefResult } catch { print("Georef load error: \(error)") }
         isLoading = false
+    }
+
+    private func showPlateOnMap(_ plate: Plate) async {
+        guard let georef = georefs.first(where: { $0.pdf_name == plate.pdf }) else { return }
+        isLoadingOverlay = true
+
+        // Download the PDF
+        let url = await api.platePDFURL(ident: airport.ident, pdf: plate.pdf)
+        do {
+            let (data, _) = try await URLSession.shared.data(from: url)
+            if let overlay = PlateOverlayInfo.from(georef: georef, pdfData: data) {
+                dataManager.plateOverlay = overlay
+                dismiss()
+            }
+        } catch {
+            print("Plate overlay error: \(error)")
+        }
+        isLoadingOverlay = false
     }
 }

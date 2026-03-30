@@ -23,6 +23,9 @@ final class DataManager {
     var visibleWaypoints: [Waypoint] = []
     var visibleTFRs: [TFRFeature] = []
 
+    // Plate overlay
+    var plateOverlay: PlateOverlayInfo?
+
     // All data (loaded once, filtered on-device)
     private var allAirspace: [AirspaceFeature] = []
     private var allNavaids: [Navaid] = []

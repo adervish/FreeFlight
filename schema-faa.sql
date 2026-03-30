@@ -162,3 +162,20 @@ CREATE TABLE IF NOT EXISTS faa_runways (
   lighting TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_faa_runways_airport ON faa_runways(airport_ident);
+
+-- Georeferenced approach plate overlays
+CREATE TABLE IF NOT EXISTS faa_plate_georef (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  airport_ident TEXT NOT NULL,
+  pdf_name TEXT NOT NULL,
+  nw_lat REAL NOT NULL,
+  nw_lon REAL NOT NULL,
+  ne_lat REAL NOT NULL,
+  ne_lon REAL NOT NULL,
+  sw_lat REAL NOT NULL,
+  sw_lon REAL NOT NULL,
+  se_lat REAL NOT NULL,
+  se_lon REAL NOT NULL,
+  UNIQUE(airport_ident, pdf_name)
+);
+CREATE INDEX IF NOT EXISTS idx_plate_georef_airport ON faa_plate_georef(airport_ident);

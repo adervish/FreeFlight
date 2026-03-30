@@ -63,6 +63,11 @@ actor APIClient {
         URL(string: "\(baseURL)/api/plates/\(ident)/\(pdf)")!
     }
 
+    func fetchPlateGeoref(ident: String) async throws -> [PlateGeoref] {
+        let url = URL(string: "\(baseURL)/api/plates/georef/\(ident)")!
+        return try await fetch(url)
+    }
+
     // MARK: - Raw Data (for GeoJSON files parsed manually)
 
     func fetchRawData(path: String) async throws -> Data {

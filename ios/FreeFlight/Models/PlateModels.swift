@@ -11,6 +11,21 @@ struct Plate: Codable, Identifiable, Hashable {
     var id: String { pdf }
     let name: String
     let pdf: String
+    let georef: Bool?
+
+    var isGeoreferenced: Bool { georef ?? false }
+}
+
+struct PlateGeoref: Codable {
+    let pdf_name: String
+    let nw_lat: Double
+    let nw_lon: Double
+    let ne_lat: Double
+    let ne_lon: Double
+    let sw_lat: Double
+    let sw_lon: Double
+    let se_lat: Double
+    let se_lon: Double
 }
 
 struct AirportFrequency: Codable, Identifiable {

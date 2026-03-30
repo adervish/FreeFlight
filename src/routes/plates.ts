@@ -19,6 +19,36 @@ const CHART_ORDER: Record<string, { order: number; label: string }> = {
 
 const app = new Hono<{ Bindings: Bindings }>();
 
+// GET /api/plates/georef/:ident — get georeferenced plates for an airport
+app.get("/georef/:ident", async (c) => {
+  const ident = c.req.param("ident").toUpperCase();
+  const result = await c.env.DB.prepare(
+    `SELECT pdf_name, nw_lat, nw_lon, ne_lat, ne_lon, sw_lat, sw_lon, se_lat, se_lon
+     FROM faa_plate_georef WHERE airport_ident = ?`
+  ).bind(ident).all();
+  return c.json(result.results);
+});
+
+// GET /api/plates/georef-image/:pdf — serve plate as PNG for map overlay
+app.get("/georef-image/:pdf", async (c) => {
+  const pdf = c.req.param("pdf");
+  const faaUrl = `${FAA_PDF_BASE}/${pdf}`;
+
+  // Fetch PDF from FAA
+  const res = await fetch(faaUrl);
+  if (!res.ok) return c.json({ error: "PDF not found" }, 404);
+
+  // Return PDF — the client will handle rendering
+  // For web overlay, we return the PDF and the client converts
+  // For iOS, the client uses PDFKit to render to an image
+  return new Response(res.body, {
+    headers: {
+      "Content-Type": "application/pdf",
+      "Cache-Control": "public, max-age=604800",
+    },
+  });
+});
+
 // GET /api/plates/info/:ident — full airport info (frequencies + runways)
 app.get("/info/:ident", async (c) => {
   const ident = c.req.param("ident").toUpperCase();
@@ -53,15 +83,21 @@ app.get("/:ident", async (c) => {
     return c.json({ error: "No plates found" }, 404);
   }
 
+  // Get georef data for this airport
+  const georefResult = await c.env.DB.prepare(
+    "SELECT pdf_name FROM faa_plate_georef WHERE airport_ident = ?"
+  ).bind(ident).all();
+  const georefPdfs = new Set((georefResult.results as { pdf_name: string }[]).map(r => r.pdf_name));
+
   // Group by chart type
-  const groups: Record<string, { label: string; order: number; plates: { name: string; pdf: string }[] }> = {};
+  const groups: Record<string, { label: string; order: number; plates: { name: string; pdf: string; georef: boolean }[] }> = {};
   for (const row of result.results as { chart_code: string; chart_name: string; pdf_name: string }[]) {
     const code = row.chart_code;
     if (!groups[code]) {
       const meta = CHART_ORDER[code] || { order: 99, label: code };
       groups[code] = { label: meta.label, order: meta.order, plates: [] };
     }
-    groups[code].plates.push({ name: row.chart_name, pdf: row.pdf_name });
+    groups[code].plates.push({ name: row.chart_name, pdf: row.pdf_name, georef: georefPdfs.has(row.pdf_name) });
   }
 
   // Sort groups by order

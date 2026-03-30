@@ -36,6 +36,18 @@ struct ContentView: View {
                         .background(.ultraThinMaterial)
                         .clipShape(Capsule())
                     Spacer()
+                    if dataManager.plateOverlay != nil {
+                        Button {
+                            withAnimation { dataManager.plateOverlay = nil }
+                        } label: {
+                            Label("Hide Plate", systemImage: "xmark.circle.fill")
+                                .font(.system(size: 11, weight: .semibold))
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 5)
+                                .background(.ultraThinMaterial)
+                                .clipShape(Capsule())
+                        }
+                    }
                 }
                 .padding(.horizontal, 12)
                 .padding(.bottom, locationManager.isTracking ? 0 : 34)
@@ -75,6 +87,19 @@ struct ContentView: View {
         }
         .onAppear {
             dataManager.loadInitialData()
+        }
+        .onChange(of: dataManager.plateOverlay?.id) { _, newVal in
+            if let overlay = dataManager.plateOverlay {
+                withAnimation(.easeInOut(duration: 0.5)) {
+                    mapPosition = .region(MKCoordinateRegion(
+                        center: overlay.bounds.center,
+                        span: MKCoordinateSpan(
+                            latitudeDelta: overlay.bounds.span.latitudeDelta * 1.5,
+                            longitudeDelta: overlay.bounds.span.longitudeDelta * 1.5
+                        )
+                    ))
+                }
+            }
         }
     }
 
@@ -138,6 +163,13 @@ struct ContentView: View {
                         .onTapGesture { selectedWaypoint = waypoint }
                 }
                 .annotationTitles(.hidden)
+            }
+
+            // Plate overlay boundary
+            if let overlay = dataManager.plateOverlay {
+                MapPolygon(coordinates: [overlay.nw, overlay.ne, overlay.se, overlay.sw])
+                    .foregroundStyle(.blue.opacity(0.05))
+                    .stroke(.blue, lineWidth: 2)
             }
 
             // User location
