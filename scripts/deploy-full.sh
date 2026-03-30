@@ -55,6 +55,14 @@ echo "--- Loading runways ---"
 npx tsx scripts/download-runways.ts --remote || true
 echo ""
 
+echo "--- Loading CIFP waypoints ---"
+if [ -f /tmp/cifp/FAACIFP18 ]; then
+  npx tsx scripts/parse-cifp-waypoints.ts --remote --cifp /tmp/cifp/FAACIFP18 || true
+else
+  echo "  Skipping (download CIFP: curl -sL -o /tmp/cifp.zip https://aeronav.faa.gov/Upload_313-d/cifp/CIFP_260319.zip && cd /tmp && unzip cifp.zip -d cifp)"
+fi
+echo ""
+
 echo "--- Loading plates index ---"
 if [ -f data/plates/d-tpp_Metafile_2603.xml ]; then
   npx tsx scripts/load-plates-index.ts --remote || true
