@@ -123,6 +123,23 @@ CREATE INDEX IF NOT EXISTS idx_faa_plates_airport ON faa_plates(airport_ident);
 CREATE INDEX IF NOT EXISTS idx_faa_plates_icao ON faa_plates(icao_ident);
 CREATE INDEX IF NOT EXISTS idx_faa_plates_code ON faa_plates(chart_code);
 
+-- Temporary Flight Restrictions (from FAA GeoServer WFS + tfrapi)
+CREATE TABLE IF NOT EXISTS faa_tfrs (
+  gid INTEGER PRIMARY KEY,
+  notam_key TEXT NOT NULL,
+  title TEXT,
+  state TEXT,
+  legal TEXT,
+  cns_location_id TEXT,
+  geometry_json TEXT NOT NULL,
+  date_effective TEXT,
+  date_expiry TEXT,
+  notam_text TEXT,
+  last_modified TEXT,
+  fetched_at TEXT DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_faa_tfrs_notam ON faa_tfrs(notam_key);
+
 -- Airport frequencies (pre-joined from Services + Frequencies)
 CREATE TABLE IF NOT EXISTS faa_frequencies (
   id INTEGER PRIMARY KEY AUTOINCREMENT,

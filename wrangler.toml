@@ -15,3 +15,6 @@ database_id = "abd66e0d-4b95-47bf-aade-748e95fa93e5"
 [[routes]]
 pattern = "freeflight.bentboolean.com"
 custom_domain = true
+
+[triggers]
+crons = ["*/30 * * * *"]

@@ -15,12 +15,23 @@ struct ContentView: View {
     )
     @State private var visibleRegion: MKCoordinateRegion?
     @State private var mapStyle: MapStyleOption = .dark
+    @State private var locationManager = LocationManager.shared
 
     var body: some View {
-        ZStack(alignment: .top) {
+        ZStack {
             mapView
-            overlayControls
+            VStack {
+                overlayControls
+                Spacer()
+                if locationManager.isTracking {
+                    GPSInstrumentStrip(locationManager: locationManager)
+                        .padding(.horizontal, 8)
+                        .padding(.bottom, 34)
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                }
+            }
         }
+        .animation(.easeInOut(duration: 0.3), value: locationManager.isTracking)
         .sheet(item: $selectedAirport) { airport in
             AirportDetailView(airport: airport)
                 .presentationDetents([.medium, .large])
@@ -36,6 +47,13 @@ struct ContentView: View {
 
     private var mapView: some View {
         Map(position: $mapPosition) {
+            // TFR overlays
+            ForEach(dataManager.visibleTFRs) { tfr in
+                MapPolygon(coordinates: tfr.coordinates)
+                    .foregroundStyle(tfr.fillColor.opacity(tfr.fillOpacity))
+                    .stroke(tfr.strokeColor, lineWidth: tfr.strokeWidth)
+            }
+
             // Airspace overlays
             ForEach(dataManager.visibleAirspace) { airspace in
                 MapPolygon(coordinates: airspace.coordinates)
@@ -66,6 +84,11 @@ struct ContentView: View {
                     NavaidMarkerView(navaid: navaid)
                 }
                 .annotationTitles(.hidden)
+            }
+
+            // User location
+            if locationManager.isTracking {
+                UserAnnotation()
             }
         }
         .mapStyle(mapStyle.style)
@@ -100,6 +123,7 @@ struct ContentView: View {
             // Layer controls
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 4) {
+                    LayerToggle(label: "TFRs", icon: "exclamationmark.shield", isOn: $bindableDataManager.showTFRs)
                     LayerToggle(label: "Airspace", icon: "circle.hexagongrid", isOn: $bindableDataManager.showAirspace)
                     LayerToggle(label: "Airports", icon: "airplane", isOn: $bindableDataManager.showAirports)
                     LayerToggle(label: "Navaids", icon: "antenna.radiowaves.left.and.right", isOn: $bindableDataManager.showNavaids)
@@ -107,6 +131,14 @@ struct ContentView: View {
                     LayerToggle(label: "Waypoints", icon: "mappin", isOn: $bindableDataManager.showWaypoints)
 
                     Divider().frame(height: 28)
+
+                    GPSToggleButton(isTracking: $locationManager.isTracking) {
+                        if locationManager.isTracking {
+                            locationManager.stopTracking()
+                        } else {
+                            locationManager.startTracking()
+                        }
+                    }
 
                     MapStylePicker(selection: $mapStyle)
                 }

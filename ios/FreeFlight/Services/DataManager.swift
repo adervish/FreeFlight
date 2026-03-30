@@ -12,6 +12,7 @@ final class DataManager {
     var showNavaids = false
     var showObstacles = false
     var showWaypoints = false
+    var showTFRs = true
 
     // Visible data
     var visibleAirspace: [AirspaceFeature] = []
@@ -20,10 +21,15 @@ final class DataManager {
     var visibleNavaids: [Navaid] = []
     var visibleObstacles: [Obstacle] = []
     var visibleWaypoints: [Waypoint] = []
+    var visibleTFRs: [TFRFeature] = []
 
     // All airspace (loaded once from GeoJSON)
     private var allAirspace: [AirspaceFeature] = []
     private var airspaceLoaded = false
+
+    // All TFRs (cached with hourly refresh)
+    private var allTFRs: [TFRFeature] = []
+    private var tfrsLoaded = false
 
     // Debounce
     private var updateTask: Task<Void, Never>?
@@ -38,7 +44,8 @@ final class DataManager {
     func loadInitialData() async {
         async let airspace: () = loadAirspaceData()
         async let airports: () = airportStore.loadAll()
-        _ = await (airspace, airports)
+        async let tfrs: () = loadTFRData()
+        _ = await (airspace, airports, tfrs)
     }
 
     private func loadAirspaceData() async {
@@ -72,6 +79,33 @@ final class DataManager {
         filterAirspaceForZoom(zoom: 5)
     }
 
+    private func loadTFRData() async {
+        guard !tfrsLoaded else { return }
+        tfrsLoaded = true
+
+        let url = "\(await api.baseURL)/api/tfrs"
+        guard let data = await fileCache.getData(for: url, maxAge: 3600) else {
+            print("Failed to load TFRs")
+            return
+        }
+        allTFRs = TFRParser.parse(data: data)
+        print("Loaded \(allTFRs.count) TFR polygons")
+    }
+
+    private func filterTFRsForRegion(_ region: MKCoordinateRegion) {
+        let latMin = region.center.latitude - region.span.latitudeDelta / 2 - 1
+        let latMax = region.center.latitude + region.span.latitudeDelta / 2 + 1
+        let lngMin = region.center.longitude - region.span.longitudeDelta / 2 - 1
+        let lngMax = region.center.longitude + region.span.longitudeDelta / 2 + 1
+
+        visibleTFRs = allTFRs.filter { tfr in
+            tfr.coordinates.contains { c in
+                c.latitude >= latMin && c.latitude <= latMax &&
+                c.longitude >= lngMin && c.longitude <= lngMax
+            }
+        }
+    }
+
     // MARK: - Feature Updates
 
     func updateVisibleFeatures(region: MKCoordinateRegion, zoom: Int) async {
@@ -83,6 +117,13 @@ final class DataManager {
         } else {
             visibleAirspace = []
             airspaceLabels = []
+        }
+
+        // Filter TFRs by viewport (visible at all zoom levels)
+        if showTFRs {
+            filterTFRsForRegion(region)
+        } else {
+            visibleTFRs = []
         }
 
         // Debounce API calls
