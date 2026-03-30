@@ -108,6 +108,15 @@ app.get("/all-airports", async (c) => {
   return c.json(result.results);
 });
 
+// GET /api/features/all-waypoints — bulk download for local caching
+app.get("/all-waypoints", async (c) => {
+  const result = await c.env.DB.prepare(
+    `SELECT ident, latitude, longitude, type_code, tier
+     FROM faa_designated_points ORDER BY ident ASC`
+  ).all();
+  return c.json(result.results);
+});
+
 // GET /api/features/all-navaids — bulk download for local caching
 app.get("/all-navaids", async (c) => {
   const result = await c.env.DB.prepare(

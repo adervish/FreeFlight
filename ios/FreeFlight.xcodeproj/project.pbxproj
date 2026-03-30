@@ -28,6 +28,7 @@
 		A1000019 /* GPSInstrumentStrip.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000019 /* GPSInstrumentStrip.swift */; };
 		A100001A /* FeatureDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A200001A /* FeatureDetailView.swift */; };
 		A100001B /* LocalNavaidStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A200001B /* LocalNavaidStore.swift */; };
+		A100001C /* LocalWaypointStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A200001C /* LocalWaypointStore.swift */; };
 		A1000020 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A2000020 /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
@@ -53,6 +54,8 @@
 		A2000019 /* GPSInstrumentStrip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GPSInstrumentStrip.swift; sourceTree = "<group>"; };
 		A200001A /* FeatureDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeatureDetailView.swift; sourceTree = "<group>"; };
 		A200001B /* LocalNavaidStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalNavaidStore.swift; sourceTree = "<group>"; };
+		A200001C /* LocalWaypointStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalWaypointStore.swift; sourceTree = "<group>"; };
+		A200001C /* LocalWaypointStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalWaypointStore.swift; sourceTree = "<group>"; };
 		A2000020 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A3000001 /* FreeFlight.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FreeFlight.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -99,6 +102,7 @@
 				A2000015 /* FileCache.swift */,
 				A2000016 /* LocalAirportStore.swift */,
 				A200001B /* LocalNavaidStore.swift */,
+				A200001C /* LocalWaypointStore.swift */,
 				A2000018 /* LocationManager.swift */,
 			);
 			path = Services;
@@ -247,6 +251,7 @@
 			A1000015 /* FileCache.swift in Sources */,
 			A1000016 /* LocalAirportStore.swift in Sources */,
 			A100001B /* LocalNavaidStore.swift in Sources */,
+			A100001C /* LocalWaypointStore.swift in Sources */,
 			A1000017 /* TFR.swift in Sources */,
 			A1000018 /* LocationManager.swift in Sources */,
 			A1000019 /* GPSInstrumentStrip.swift in Sources */,

@@ -35,12 +35,14 @@ final class DataManager {
     private let api = APIClient.shared
     private let fileCache = FileCache.shared
     private let airportStore = LocalAirportStore.shared
+    private let waypointStore = LocalWaypointStore.shared
 
     // MARK: - Initial Load
 
     func loadInitialData() {
         Task { await loadAirspaceData() }
         Task { await airportStore.loadAll() }
+        Task { await waypointStore.loadAll() }
         Task { await loadNavaidData() }
         Task { await loadTFRData() }
     }
@@ -211,30 +213,29 @@ final class DataManager {
             visibleAirports = []
         }
 
-        // Obstacles & waypoints: still fetched from API
-        var layers: [String] = []
-        if showObstacles { layers.append("obstacles") }
-        if showWaypoints { layers.append("waypoints") }
-
-        if layers.isEmpty {
-            visibleObstacles = []
+        // Waypoints: local filtering
+        if showWaypoints {
+            visibleWaypoints = await waypointStore.waypointsIn(region: region, zoom: zoom)
+        } else {
             visibleWaypoints = []
-            return
         }
 
-        let bounds = MapBounds(
-            latMin: region.center.latitude - region.span.latitudeDelta / 2,
-            lngMin: region.center.longitude - region.span.longitudeDelta / 2,
-            latMax: region.center.latitude + region.span.latitudeDelta / 2,
-            lngMax: region.center.longitude + region.span.longitudeDelta / 2
-        )
-
-        do {
-            let response = try await api.fetchFeatures(layers: layers, zoom: zoom, bounds: bounds)
-            if showObstacles { visibleObstacles = response.obstacles ?? [] }
-            if showWaypoints { visibleWaypoints = response.waypoints ?? [] }
-        } catch {
-            print("Feature fetch error: \(error)")
+        // Obstacles: still fetched from API
+        if showObstacles {
+            let bounds = MapBounds(
+                latMin: region.center.latitude - region.span.latitudeDelta / 2,
+                lngMin: region.center.longitude - region.span.longitudeDelta / 2,
+                latMax: region.center.latitude + region.span.latitudeDelta / 2,
+                lngMax: region.center.longitude + region.span.longitudeDelta / 2
+            )
+            do {
+                let response = try await api.fetchFeatures(layers: ["obstacles"], zoom: zoom, bounds: bounds)
+                visibleObstacles = response.obstacles ?? []
+            } catch {
+                print("Feature fetch error: \(error)")
+            }
+        } else {
+            visibleObstacles = []
         }
     }
 }
